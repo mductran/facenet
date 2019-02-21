@@ -28,10 +28,18 @@ import argparse
 import sys
 import time
 
+import datetime
+
 import cv2
 
 import face
 
+
+def write_to_log(log_file, id):
+    with open(log_file, 'w+') as log:
+        now = datetime.datetime.now()
+        log.write('{} check in at {}.'.format(id, str(now))
+        
 
 def add_overlays(frame, faces, frame_rate):
     if faces is not None:
@@ -51,7 +59,7 @@ def add_overlays(frame, faces, frame_rate):
 
 
 def main(args):
-    frame_interval = 3  # Number of frames after which to run face detection
+    frame_interval = 5  # Number of frames after which to run face detection
     fps_display_interval = 5  # seconds
     frame_rate = 0
     frame_count = 0
@@ -64,12 +72,32 @@ def main(args):
         print("Debug enabled")
         face.debug = True
 
+    # list of tracked identity in current and previous frame
+    curIds = []
+    prevIds = []
+
+    log = open('checkinLog.txt', 'w+')
+    
     while True:
         # Capture frame-by-frame
         ret, frame = video_capture.read()
 
         if (frame_count % frame_interval) == 0:
+            
             faces = face_recognition.identify(frame)
+            
+            curIds += faces
+            
+            # write check in to log
+            # TODO: open doors
+            if not prevIds:
+                for face in curIds:
+                    write_to_log(log, face)
+                                        
+            elif (len(curIds) > len(prevIds)):
+                for face in curIds:
+                    if face not in prevIds:
+                        write_to_log(face)
 
             # Check our current fps
             end_time = time.time()
